@@ -32,7 +32,7 @@ public class JobProcessingTemplateServiceImpl implements JobProcessingTemplateSe
 
     //------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------
-    //-------------------------- Pulgin Exposed methods initiateJobBatching --------------------------
+    //-------------------------- Plugin Exposed methods initiateJobBatching --------------------------
     //------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------
@@ -103,7 +103,7 @@ public class JobProcessingTemplateServiceImpl implements JobProcessingTemplateSe
      * @return List<Long>
      */
     @Transactional(readOnly = true)
-    private List<Long> fetchUserIds(String sql, Long startId, int pageSize) {
+    protected List<Long> fetchUserIds(String sql, Long startId, int pageSize) {
 
         @SuppressWarnings("unchecked")
         List<Long> rawResults = entityManager.createNativeQuery(sql)
