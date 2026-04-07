@@ -1,0 +1,31 @@
+### GET request to example server
+GET http://localhost:8181/api/users/publisher
+
+POST http://localhost:8585/api/users/consumer
+Content-Type: application/json
+
+{
+  "jobId": "JOB_1001",
+  "batchId": 1,
+
+  "startId": 0,
+  "endId": 100,
+
+  "totalRecords": 1000,
+  "processedRecords": 0,
+  "failedRecords": 0,
+
+  "jobType": "USER_IMPORT",
+  "status": "PENDING",
+  "retryCount": 0,
+
+  "workerNode": "node-1",
+  "parentWorkerNode": "master-node",
+
+  "createdAt": "2026-04-07T10:30:00",
+  "startedAt": null,
+  "completedAt": null,
+
+  "paginationSize": 100,
+  "executorPoolSize": 5
+}
