@@ -73,7 +73,7 @@ public class InactiveUserBatchProcessor implements BatchJobProcessor {
         AtomicInteger processedCount = new AtomicInteger(0);
         AtomicInteger failedCount = new AtomicInteger(0);
         try {
-            processInactiveUsersWithPagination(batch, dto , processedCount  ,failedCount );
+            processInactiveUsersWithPagination(batch, dto, processedCount, failedCount);
 
             batch.setProcessedRecords(processedCount.get());
             batch.setFailedRecords(failedCount.get());
@@ -96,7 +96,7 @@ public class InactiveUserBatchProcessor implements BatchJobProcessor {
     }
 
 
-    private void processInactiveUsersWithPagination(JobBatchProcessingEntity batch, JobBatchProcessingDto dto , AtomicInteger processedCount,  AtomicInteger failedCount) {
+    private void processInactiveUsersWithPagination(JobBatchProcessingEntity batch, JobBatchProcessingDto dto, AtomicInteger processedCount, AtomicInteger failedCount) {
         ExecutorService executorService = Executors.newFixedThreadPool(batch.getExecutorPoolSize());
         try {
             List<CompletableFuture<Void>> futures = new ArrayList<>();
@@ -109,6 +109,11 @@ public class InactiveUserBatchProcessor implements BatchJobProcessor {
                     log.info("No Records found in range startId={}, endId={}", dto.getStartId(), dto.getEndId());
                     break;
                 }
+                if (startingId == dto.getEndId()) {
+                    log.info("All records processed successfully : jobId={}, batchId={}, startId={}, endId={}", dto.getJobId(), dto.getBatchId(), dto.getStartId(), dto.getEndId());
+                    break;
+                }
+
                 startingId = list.get(list.size() - 1).getId();
                 int finalCurrentPage = currentPage++;
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {

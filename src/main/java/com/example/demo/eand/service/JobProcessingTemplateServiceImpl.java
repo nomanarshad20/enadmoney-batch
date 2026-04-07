@@ -78,7 +78,7 @@ public class JobProcessingTemplateServiceImpl implements JobProcessingTemplateSe
 
         while (true) {
             JobBatchProcessingDto dto = prepareDefaultDTO(batchConfigDTO, jobId, batchId, startId);
-            List<Long> userIdsList = fetchUserIds(batchConfigDTO.getJpaSqlCommand(), startId, batchConfigDTO.getPaginationSize());
+            List<Long> userIdsList = fetchUserIds(batchConfigDTO.getJpaSqlCommand(), startId, batchConfigDTO.getBatchChunkSize()); // TODO :Call transactional methods via an injected dependency
             if (null == userIdsList || userIdsList.isEmpty()) {
                 log.info("No more records found. Stopping processing.");
                 break;

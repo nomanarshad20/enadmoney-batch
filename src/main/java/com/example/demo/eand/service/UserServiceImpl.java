@@ -41,7 +41,7 @@ public class UserServiceImpl {
                 .jobType(JobTypeEnum.INACTIVE_USER)
                 .retryCount(3)
                 .batchChunkSize(1000)
-                .paginationSize(100)
+                .paginationSize(500)
                 .executorPoolSize(10)
                 .build();
         jobProcessingTemplateService.initiateJobBatching(dto);
@@ -77,7 +77,7 @@ public class UserServiceImpl {
             for (UserEntity user : users) {
                 user.setStatus("INACTIVE"); // inactive
             }
-            userRepository.saveAll(users);
+           // userRepository.saveAll(users);
             processedCount.addAndGet(users.size());
             log.info("Processed page successfully. recordCount={}", users.size());
         } catch (Exception ex) {
