@@ -70,10 +70,9 @@ public class InactiveUserBatchProcessor implements BatchJobProcessor {
 
 
     void initiate(JobBatchProcessingDto dto, JobBatchProcessingEntity batch) {
+        AtomicInteger processedCount = new AtomicInteger(0);
+        AtomicInteger failedCount = new AtomicInteger(0);
         try {
-            AtomicInteger processedCount = new AtomicInteger(0);
-            AtomicInteger failedCount = new AtomicInteger(0);
-
             processInactiveUsersWithPagination(batch, dto , processedCount  ,failedCount );
 
             batch.setProcessedRecords(processedCount.get());
@@ -87,6 +86,8 @@ public class InactiveUserBatchProcessor implements BatchJobProcessor {
         } catch (Exception ex) {
             log.error("Batch failed. jobId={}, batchId={}", dto.getJobId(), dto.getBatchId(), ex);
 
+            batch.setProcessedRecords(processedCount.get());
+            batch.setFailedRecords(failedCount.get());
             batch.setStatus(BatchStatusEnum.FAILED.name());
             batch.setCompletedAt(LocalDateTime.now());
             jobProcessingRepo.save(batch);
