@@ -46,8 +46,8 @@ public class InactiveUserBatchProcessor extends AbstractBatchJobProcessor<UserEn
     }
 
     @Override
-    protected int countRecords(JobBatchProcessingDto dto) {
-        return (int) userRepository.countByIdBetween(dto.getStartId(), dto.getEndId());
+    protected int countRecords(Long startId, Long endId, String jobId, Long batchId, String jobType) {
+        return (int) userRepository.countByIdBetween(startId, endId);
     }
 
 

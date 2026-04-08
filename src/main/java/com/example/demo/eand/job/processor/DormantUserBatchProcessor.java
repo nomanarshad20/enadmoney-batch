@@ -2,6 +2,7 @@ package com.example.demo.eand.job.processor;
 
 
 import com.example.demo.eand.dto.JobBatchProcessingDto;
+import com.example.demo.eand.entity.JobBatchProcessingEntity;
 import com.example.demo.eand.enums.JobTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

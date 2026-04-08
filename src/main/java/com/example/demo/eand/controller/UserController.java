@@ -21,16 +21,18 @@ public class UserController {
     private final BatchJobRoutingService batchJobRoutingService;
 
 
-    @GetMapping("/publisher")
+    @GetMapping("/job-batching/publisher")
     public ResponseEntity<?> consume() {
         return ResponseEntity.ok(appUserService.inactiveUserJobBatchTemplate());
     }
 
 
-    @PostMapping("/consumer")
+    @PostMapping("/job-batching/consumer")
     public ResponseEntity<?> createUser(@RequestBody JobBatchProcessingDto dto) {
         batchJobRoutingService.process(dto);
         return ResponseEntity.ok("SUCCESS");
     }
+
+
 
 }
