@@ -113,7 +113,10 @@ public class JobProcessingTemplateServiceImpl implements JobProcessingTemplateSe
         return rawResults;
     }
 
-
+    /**
+     * saving the batch list to DB in batch
+     * @param jobBatchProcessingDto
+     */
     private void saveJobBatchTemplate(List<JobBatchProcessingDto> jobBatchProcessingDto) {
         List<JobBatchProcessingEntity> savedBatchEntityList = new ArrayList<>();
         jobBatchProcessingDto.forEach(batch -> {
