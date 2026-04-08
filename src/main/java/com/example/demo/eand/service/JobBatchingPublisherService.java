@@ -2,7 +2,7 @@ package com.example.demo.eand.service;
 
 import com.example.demo.eand.dto.BatchConfigDTO;
 
-public interface JobProcessingTemplateService {
+public interface JobBatchingPublisherService {
 
     void initiateJobBatching(BatchConfigDTO batchConfigDTO);
 

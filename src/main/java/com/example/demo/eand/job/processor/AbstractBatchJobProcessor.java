@@ -1,18 +1,11 @@
 package com.example.demo.eand.job.processor;
+
 import com.example.demo.eand.dto.JobBatchProcessingDto;
 import com.example.demo.eand.entity.JobBatchProcessingEntity;
-import com.example.demo.eand.entity.UserEntity;
 import com.example.demo.eand.enums.BatchStatusEnum;
-import com.example.demo.eand.enums.JobTypeEnum;
 import com.example.demo.eand.repo.JobProcessingRepo;
-import com.example.demo.eand.repo.UserEntityRepo;
-import com.example.demo.eand.service.JobProcessingTemplateService;
-import com.example.demo.eand.service.UserServiceImpl;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,22 +14,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import com.example.demo.eand.repo.JobProcessingRepo;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@AllArgsConstructor
 public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor {
-
 
     private final JobProcessingRepo jobProcessingRepo;
 
 
-
     //------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------
-    //-------------------------- Methods to override by child classes --------------------------
+    //-------------------------- Methods to override by child classes --------------------------------
     //------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------
@@ -51,9 +38,6 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
     protected abstract int countRecords(JobBatchProcessingDto dto);
 
 
-
-
-
     //------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------
     //-------------------------- Generic implementation for job processing --------------------------
@@ -66,7 +50,6 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
     public void processBatchJob(JobBatchProcessingDto jobDto) {
         logStart(jobDto);
         JobBatchProcessingEntity batch = markRunningBatchEntity(jobDto);
-
         AtomicInteger processedCount = new AtomicInteger(0);
         AtomicInteger failedCount = new AtomicInteger(0);
 
@@ -79,10 +62,10 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
             batch.setCompletedAt(LocalDateTime.now());
             jobProcessingRepo.save(batch);
 
-            log.info("Batch completed successfully. jobId={}, batchId={}", jobDto.getJobId(), jobDto.getBatchId());
+            log.info("BATCH JOBS : Batch completed successfully. jobId={}, batchId={}", jobDto.getJobId(), jobDto.getBatchId());
 
         } catch (Exception ex) {
-            log.error("Batch failed. jobId={}, batchId={}", jobDto.getJobId(), jobDto.getBatchId(), ex);
+            log.error("BATCH JOBS : Batch failed. jobId={}, batchId={}", jobDto.getJobId(), jobDto.getBatchId(), ex);
 
             batch.setProcessedRecords(processedCount.get());
             batch.setFailedRecords(failedCount.get());
@@ -90,11 +73,19 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
             batch.setCompletedAt(LocalDateTime.now());
             jobProcessingRepo.save(batch);
 
-            throw new RuntimeException("Batch processing failed", ex);
+            throw new RuntimeException("BATCH JOBS : Batch processing failed", ex);
         }
 
         logEnd(jobDto);
     }
+
+    //------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------
+    //-------------------------- Supporting methods -----------------------------------------------------
+    //------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------
+
 
     private void processWithPagination(JobBatchProcessingDto dto, JobBatchProcessingEntity batch, AtomicInteger processedCount, AtomicInteger failedCount) {
         ExecutorService executorService = Executors.newFixedThreadPool(batch.getExecutorPoolSize());
@@ -105,10 +96,12 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
             int currentPage = 1;
 
             while (true) {
+
+                log.info("BATCH JOBS : Batch preparing | jobType={} jobId={} batchId={} startId={} endId={} page={}", dto.getJobType(), dto.getJobId(), dto.getBatchId(), dto.getStartId(), dto.getEndId(),currentPage);
                 List<T> records = getQueryPaginatedResponse(startingId, dto.getEndId(), dto.getPaginationSize());
 
                 if (records == null || records.isEmpty()) {
-                    log.info("No records found in range startId={}, endId={}", dto.getStartId(), dto.getEndId());
+                    log.info("BATCH JOBS : No records found in range startId={}, endId={}", dto.getStartId(), dto.getEndId());
                     break;
                 }
 
@@ -116,15 +109,17 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
                 int pageNo = currentPage++;
 
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                    log.info("BATCH JOBS : Processing page | jobType={} jobId={} batchId={} pageNo={}", dto.getJobType(), dto.getJobId(), dto.getBatchId(), pageNo);
                     processRecords(records, processedCount, failedCount);
                 }, executorService).exceptionally(ex -> {
-                    log.error("Page processing failed. pageNumber={}", pageNo, ex);
+                    log.error("BATCH JOBS : Page processing failed. pageNumber={}", pageNo, ex);
                     failedCount.addAndGet(records.size());
                     return null;
                 });
 
                 futures.add(future);
 
+                // NOTE : database query should be optimized to fetch ordered records by start and end IDs. otherwise loop will be inefficient( never ending loop).
                 if (lastId >= dto.getEndId()) {
                     break;
                 }
@@ -143,15 +138,11 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
         JobBatchProcessingEntity batch = jobProcessingRepo.findByJobIdAndBatchIdAndJobType(
                 dto.getJobId(),
                 dto.getBatchId(),
-                dto.getJobType().name()
-        );
+                dto.getJobType().name());
 
         if (batch == null) {
             throw new RuntimeException(
-                    "Batch not found for jobId=" + dto.getJobId()
-                            + ", batchId=" + dto.getBatchId()
-                            + ", jobType=" + dto.getJobType()
-            );
+                    "BATCH JOBS : Batch not found for jobId=" + dto.getJobId() + ", batchId=" + dto.getBatchId() + ", jobType=" + dto.getJobType());
         }
 
         batch.setStatus(BatchStatusEnum.PROCESSING.name());
@@ -161,15 +152,18 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
     }
 
     protected void logStart(JobBatchProcessingDto jobDto) {
-        log.info("Starting jobType={}, jobId={}, batchId={}",
+        log.info("BATCH JOBS : Starting jobType={}, jobId={}, batchId={}",
                 jobDto.getJobType(), jobDto.getJobId(), jobDto.getBatchId());
     }
 
     protected void logEnd(JobBatchProcessingDto jobDto) {
-        log.info("Completed jobType={}, jobId={}, batchId={}",
+        log.info("BATCH JOBS : Completed jobType={}, jobId={}, batchId={}",
                 jobDto.getJobType(), jobDto.getJobId(), jobDto.getBatchId());
     }
 
+    protected AbstractBatchJobProcessor(JobProcessingRepo jobProcessingRepo) {
+        this.jobProcessingRepo = jobProcessingRepo;
+    }
 
 
 }

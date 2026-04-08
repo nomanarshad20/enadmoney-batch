@@ -6,7 +6,6 @@ import com.example.demo.eand.dto.JobBatchProcessingDto;
 
 import com.example.demo.eand.entity.JobBatchProcessingEntity;
 import com.example.demo.eand.enums.BatchStatusEnum;
-import com.example.demo.eand.pc.ConsumerClient;
 import com.example.demo.eand.repo.JobProcessingRepo;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -22,7 +21,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @AllArgsConstructor
-public class JobProcessingTemplateServiceImpl implements JobProcessingTemplateService {
+public class JobBatchingPublisherServiceImpl implements JobBatchingPublisherService {
 
     private final JobProcessingRepo jobProcessingRepo;
     @PersistenceContext
