@@ -46,10 +46,18 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
     //------------------------------------------------------------------------------------------------
 
 
+    /**
+     *  Job batch process only requires 3 parameters: jobId, batchId, job type to function properly.
+     * @param jobBatchProcessingDto
+     */
     @Override
-    public void processBatchJob(JobBatchProcessingDto jobDto) {
+    public void processBatchJob(JobBatchProcessingDto jobBatchProcessingDto) {
+        log.info("BATCH JOBS : INITIATION : Processing batch job. jobId={}, batchId={}", jobBatchProcessingDto.getJobId(), jobBatchProcessingDto.getBatchId());
+
+        JobBatchProcessingEntity batch = markRunningBatchEntity(jobBatchProcessingDto);
+        final JobBatchProcessingDto jobDto = jobBatchProcessingEntityToDTO(batch);
+
         logStart(jobDto);
-        JobBatchProcessingEntity batch = markRunningBatchEntity(jobDto);
         AtomicInteger processedCount = new AtomicInteger(0);
         AtomicInteger failedCount = new AtomicInteger(0);
 
@@ -97,7 +105,7 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
 
             while (true) {
 
-                log.info("BATCH JOBS : Batch preparing | jobType={} jobId={} batchId={} startId={} endId={} page={}", dto.getJobType(), dto.getJobId(), dto.getBatchId(), dto.getStartId(), dto.getEndId(),currentPage);
+                log.info("BATCH JOBS : Batch preparing | jobType={} jobId={} batchId={} startId={} endId={} page={}", dto.getJobType(), dto.getJobId(), dto.getBatchId(), dto.getStartId(), dto.getEndId(), currentPage);
                 List<T> records = getQueryPaginatedResponse(startingId, dto.getEndId(), dto.getPaginationSize());
 
                 if (records == null || records.isEmpty()) {
@@ -165,5 +173,26 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
         this.jobProcessingRepo = jobProcessingRepo;
     }
 
+    private JobBatchProcessingDto jobBatchProcessingEntityToDTO(JobBatchProcessingEntity entity) {
+        return JobBatchProcessingDto.builder()
+                .id(entity.getId())
+                .jobId(entity.getJobId())
+                .batchId(entity.getBatchId())
+                .startId(entity.getStartId())
+                .endId(entity.getEndId())
+                .totalRecords(entity.getTotalRecords())
+                .processedRecords(entity.getProcessedRecords())
+                .failedRecords(entity.getFailedRecords())
+                .status(entity.getStatus())
+                .retryCount(entity.getRetryCount())
+                .workerNode(entity.getWorkerNode())
+                .createdAt(entity.getCreatedAt())
+                .startedAt(entity.getStartedAt())
+                .completedAt(entity.getCompletedAt())
+                .paginationSize(entity.getPaginationSize())
+                .executorPoolSize(entity.getExecutorPoolSize())
+                .batchChunkSize(entity.getBatchChunkSize())
+                .build();
+    }
 
 }
