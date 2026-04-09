@@ -9,6 +9,8 @@ import com.example.demo.eand.entity.BatchJobProcessEntity;
 import com.example.demo.eand.enums.BatchJobStatusEnum;
 import com.example.demo.eand.enums.BatchJobTypeEnum;
 import com.example.demo.eand.repo.BatchJobProcessEntityRepo;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.AllArgsConstructor;
@@ -25,6 +27,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
 
+                private final ObjectMapper objectMapper;
     private final BatchJobProcessEntityRepo batchJobProccessEntityRepo;
     @PersistenceContext
     private EntityManager entityManager;
@@ -163,11 +166,10 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
         preparingBatchList.forEach(batch -> log.info("Job Batch Template : {}", batch));
 
         preparingBatchList.stream().forEach(batch -> {
-            log.info("Job Batch Template : {}", batch);
+            log.info("Job Batch Template : {}", getWriteValueAsString(batch));
             EandClient.callPostAPI(batch);
         });
     }
-
 
 
 
@@ -227,9 +229,6 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
 
         return batchJobProccessEntityRepo.findByJobId(jobId);
     }
-
-
-
 
 
     private BatchJobProcessEntity toEntity(JobBatchProcessingDto dto) {
@@ -294,6 +293,13 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
                 .build();
     }
 
-
+    private String getWriteValueAsString(JobBatchProcessingDto batch) {
+        try{
+            return objectMapper.writeValueAsString(batch);
+        } catch (Exception e) {
+            log.error("Error in getWriteValueAsString", e.getMessage());
+        }
+        return "Request not parsed successfully";
+    }
 
 }
