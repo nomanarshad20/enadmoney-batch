@@ -19,8 +19,6 @@ public interface BatchJobProcessEntityRepo extends JpaRepository<BatchJobProcess
 
     List<BatchJobProcessEntity> findByJobIdAndStatus(String jobId, String status);
 
-
-    // TODO : can be improved with status filter as well.
     BatchJobProcessEntity findByJobIdAndBatchIdAndJobType(String jobId, Long batchId, String jobType);
 
     List<BatchJobProcessEntity> findByStatusAndWorkerNode(String status, String workerNode);

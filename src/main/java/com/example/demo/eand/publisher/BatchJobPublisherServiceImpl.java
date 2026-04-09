@@ -166,70 +166,8 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
             log.info("Job Batch Template : {}", batch);
             EandClient.callPostAPI(batch);
         });
-
     }
 
-
-    private BatchJobProcessEntity toEntity(JobBatchProcessingDto dto) {
-        return BatchJobProcessEntity.builder()
-                .jobId(dto.getJobId())
-                .batchId(dto.getBatchId())
-                .startId(dto.getStartId())
-                .endId(dto.getEndId())
-                .totalRecords(dto.getTotalRecords())
-                .retryCount(dto.getRetryCount() != null ? dto.getRetryCount() : 1) // Default : 1
-                .status(dto.getStatus() != null ? dto.getStatus() : BatchJobStatusEnum.INITIATED.name())
-                .workerNode(dto.getWorkerNode())
-                .retryCount(dto.getRetryCount())
-                .paginationSize(dto.getPaginationSize())
-                .executorPoolSize(dto.getExecutorPoolSize())
-                .batchChunkSize(dto.getBatchChunkSize())
-                .jobType(dto.getJobType().name())
-                .build();
-    }
-
-    private JobBatchProcessingDto prepareDefaultDTO(BatchConfigDTO batchConfigDTO, String jobId, Long batchId, long startId) {
-        return JobBatchProcessingDto.builder()
-                .jobId(jobId)
-                .batchId(batchId)
-                .startId(startId)
-                .jobType(batchConfigDTO.getJobType())
-                .status(BatchJobStatusEnum.INITIATED.name())
-                .retryCount(batchConfigDTO.getRetryCount())
-                .parentWorkerNode(workerNodeName())
-                //.workerNode(workerNodeName())
-                .batchChunkSize(batchConfigDTO.getBatchChunkSize())
-                .paginationSize(batchConfigDTO.getPaginationSize())
-                .executorPoolSize(batchConfigDTO.getExecutorPoolSize())
-                .build();
-    }
-
-
-    private String workerNodeName() {
-        return "Parent_Worker_localhost_node";
-    }
-
-
-    private JobBatchProcessingDto toDTO(BatchJobProcessEntity entity) {
-        return JobBatchProcessingDto.builder()
-                .id(entity.getId())
-                .jobId(entity.getJobId())
-                .batchId(entity.getBatchId())
-                .startId(entity.getStartId())
-                .endId(entity.getEndId())
-                .totalRecords(entity.getTotalRecords())
-                .processedRecords(entity.getProcessedRecords())
-                .failedRecords(entity.getFailedRecords())
-                .status(entity.getStatus())
-                .retryCount(entity.getRetryCount())
-                .workerNode(entity.getWorkerNode())
-                .createdAt(entity.getCreatedAt())
-                .startedAt(entity.getStartedAt())
-                .completedAt(entity.getCompletedAt())
-                .paginationSize(entity.getPaginationSize())
-                .executorPoolSize(entity.getExecutorPoolSize())
-                .build();
-    }
 
 
 
@@ -289,6 +227,73 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
 
         return batchJobProccessEntityRepo.findByJobId(jobId);
     }
+
+
+
+
+
+    private BatchJobProcessEntity toEntity(JobBatchProcessingDto dto) {
+        return BatchJobProcessEntity.builder()
+                .jobId(dto.getJobId())
+                .batchId(dto.getBatchId())
+                .startId(dto.getStartId())
+                .endId(dto.getEndId())
+                .activeInd(true)
+                .totalRecords(dto.getTotalRecords())
+                .retryCount(dto.getRetryCount() != null ? dto.getRetryCount() : 1) // Default : 1
+                .status(dto.getStatus() != null ? dto.getStatus() : BatchJobStatusEnum.INITIATED.name())
+                .parentWorkerNode(dto.getParentWorkerNode())
+                .retryCount(dto.getRetryCount())
+                .paginationSize(dto.getPaginationSize())
+                .executorPoolSize(dto.getExecutorPoolSize())
+                .batchChunkSize(dto.getBatchChunkSize())
+                .jobType(dto.getJobType().name())
+                .build();
+    }
+
+    private JobBatchProcessingDto prepareDefaultDTO(BatchConfigDTO batchConfigDTO, String jobId, Long batchId, long startId) {
+        return JobBatchProcessingDto.builder()
+                .jobId(jobId)
+                .batchId(batchId)
+                .startId(startId)
+                .jobType(batchConfigDTO.getJobType())
+                .status(BatchJobStatusEnum.INITIATED.name())
+                .retryCount(batchConfigDTO.getRetryCount())
+                .parentWorkerNode(workerNodeName())
+                //.workerNode(workerNodeName())
+                .batchChunkSize(batchConfigDTO.getBatchChunkSize())
+                .paginationSize(batchConfigDTO.getPaginationSize())
+                .executorPoolSize(batchConfigDTO.getExecutorPoolSize())
+                .build();
+    }
+
+
+    private String workerNodeName() {
+        return "Parent_Worker_localhost_node";
+    }
+
+
+    private JobBatchProcessingDto toDTO(BatchJobProcessEntity entity) {
+        return JobBatchProcessingDto.builder()
+                .id(entity.getId())
+                .jobId(entity.getJobId())
+                .batchId(entity.getBatchId())
+                .startId(entity.getStartId())
+                .endId(entity.getEndId())
+                .totalRecords(entity.getTotalRecords())
+                .processedRecords(entity.getProcessedRecords())
+                .failedRecords(entity.getFailedRecords())
+                .status(entity.getStatus())
+                .retryCount(entity.getRetryCount())
+                .workerNode(entity.getWorkerNode())
+                .createdAt(entity.getCreatedAt())
+                .startedAt(entity.getStartedAt())
+                .completedAt(entity.getCompletedAt())
+                .paginationSize(entity.getPaginationSize())
+                .executorPoolSize(entity.getExecutorPoolSize())
+                .build();
+    }
+
 
 
 }

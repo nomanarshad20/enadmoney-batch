@@ -29,7 +29,7 @@ public class UserServiceImpl {
                 .jobType(BatchJobTypeEnum.INACTIVE_USER)
                 .retryCount(3)
                 .batchChunkSize(1000)
-                .paginationSize(500)
+                .paginationSize(300)
                 .executorPoolSize(10)
                 .build();
         jobProcessingTemplateService.initiateJobBatching(dto);
