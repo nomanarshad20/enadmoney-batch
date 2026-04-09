@@ -1,10 +1,10 @@
 package com.example.demo.eand.entity;
 
 import com.example.demo.eand.enums.BatchJobStatusEnum;
-import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Where;
 
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity

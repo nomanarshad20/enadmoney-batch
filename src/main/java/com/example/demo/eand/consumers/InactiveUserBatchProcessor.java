@@ -7,6 +7,8 @@ import com.example.demo.eand.repo.BatchJobProcessEntityRepo;
 import com.example.demo.eand.repo.UserEntityRepo;
 import com.example.demo.eand.service.UserServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -19,8 +21,12 @@ public class InactiveUserBatchProcessor extends AbstractBatchJobConsumerProcesso
     private final UserServiceImpl userServiceImpl;
     private final  UserEntityRepo userRepository;
 
-    public InactiveUserBatchProcessor(BatchJobProcessEntityRepo batchJobProccessEntityRepo, UserServiceImpl userServiceImpl, UserEntityRepo userRepository) {
-        super(batchJobProccessEntityRepo);
+    public InactiveUserBatchProcessor(BatchJobProcessEntityRepo batchJobProccessEntityRepo, 
+                                     UserServiceImpl userServiceImpl, 
+                                     UserEntityRepo userRepository,
+                                     BeanFactory beanFactory,
+                                     Tracer tracer) {
+        super(batchJobProccessEntityRepo, beanFactory, tracer);
         this.userServiceImpl = userServiceImpl;
         this.userRepository = userRepository;
     }
