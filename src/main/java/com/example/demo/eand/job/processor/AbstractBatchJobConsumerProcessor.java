@@ -22,16 +22,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobProcessor {
 
-    private final BatchJobProcessEntityRepo batchJobProccessEntityRepo;
+    private final BatchJobProcessEntityRepo batchJobProcessEntityRepo;
     private final BeanFactory beanFactory;
     private final Tracer tracer;
 
     protected AbstractBatchJobConsumerProcessor(
             BatchJobProcessEntityRepo batchJobProccessEntityRepo,
             BeanFactory beanFactory,
-            Tracer tracer
-    ) {
-        this.batchJobProccessEntityRepo = batchJobProccessEntityRepo;
+            Tracer tracer) {
+        this.batchJobProcessEntityRepo = batchJobProccessEntityRepo;
         this.beanFactory = beanFactory;
         this.tracer = tracer;
     }
@@ -53,7 +52,7 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
     @Override
     public void processBatchJob(JobBatchProcessingDto jobBatchProcessingDto) {
 
-        Span batchSpan = tracer.nextSpan().name("batch-process").start();
+        Span batchSpan = tracer.nextSpan().name("Batch-Consumer").start();
 
         try (SpanInScope ws = tracer.withSpan(batchSpan)) {
 
@@ -80,7 +79,7 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
                 batch.setFailedRecords(failedCount.get());
                 batch.setStatus(BatchJobStatusEnum.COMPLETED.name());
                 batch.setCompletedAt(LocalDateTime.now());
-                batchJobProccessEntityRepo.save(batch);
+                batchJobProcessEntityRepo.save(batch);
 
                 log.info("BATCH JOBS : Batch completed successfully. jobId={}, batchId={}, totalRecords={}, processedRecords={}, failedRecords={}, traceId={}, spanId={}",
                         jobDto.getJobId(),
@@ -103,7 +102,7 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
                 batch.setFailedRecords(failedCount.get());
                 batch.setStatus(BatchJobStatusEnum.FAILED.name());
                 batch.setCompletedAt(LocalDateTime.now());
-                batchJobProccessEntityRepo.save(batch);
+                batchJobProcessEntityRepo.save(batch);
 
                 throw new RuntimeException("BATCH JOBS : Batch processing failed", ex);
             }
@@ -233,7 +232,7 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
                 traceId(),
                 spanId());
 
-        BatchJobProcessEntity batch = batchJobProccessEntityRepo.findByJobIdAndBatchIdAndJobType(
+        BatchJobProcessEntity batch = batchJobProcessEntityRepo.findByJobIdAndBatchIdAndJobType(
                 dto.getJobId(),
                 dto.getBatchId(),
                 dto.getJobType().name());
@@ -249,7 +248,7 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
         batch.setStatus(BatchJobStatusEnum.PROCESSING.name());
         batch.setStartedAt(LocalDateTime.now());
 
-        BatchJobProcessEntity saved = batchJobProccessEntityRepo.save(batch);
+        BatchJobProcessEntity saved = batchJobProcessEntityRepo.save(batch);
 
         log.info("BATCH JOBS : Mark running completed | jobId={} batchId={} status={} traceId={} spanId={}",
                 saved.getJobId(),

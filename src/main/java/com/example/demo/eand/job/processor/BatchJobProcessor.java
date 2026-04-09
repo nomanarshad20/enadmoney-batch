@@ -8,4 +8,6 @@ public interface BatchJobProcessor {
     BatchJobTypeEnum getJobType();
 
     void processBatchJob(JobBatchProcessingDto jobDto);
+
+    void reInitiateFailedJobBatchingProcess(JobBatchProcessingDto jobDto);
 }

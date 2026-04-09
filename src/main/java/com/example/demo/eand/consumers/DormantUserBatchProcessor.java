@@ -23,6 +23,11 @@ public class DormantUserBatchProcessor implements BatchJobProcessor {
         logEnd(jobDto);
     }
 
+    @Override
+    public void reInitiateFailedJobBatchingProcess(JobBatchProcessingDto jobDto) {
+
+    }
+
 
     protected void logStart(JobBatchProcessingDto jobDto) {
         log.info("Starting jobType={}, jobId={}, batchId={}", jobDto.getJobType(), jobDto.getJobId(), jobDto.getBatchId());
