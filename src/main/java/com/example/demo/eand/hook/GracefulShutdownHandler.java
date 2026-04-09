@@ -1,7 +1,7 @@
 package com.example.demo.eand.hook;
-import com.example.demo.eand.entity.JobBatchProcessingEntity;
-import com.example.demo.eand.enums.BatchStatusEnum;
-import com.example.demo.eand.repo.JobProcessingRepo;
+import com.example.demo.eand.entity.BatchJobProcessEntity;
+import com.example.demo.eand.enums.BatchJobStatusEnum;
+import com.example.demo.eand.repo.BatchJobProcessEntityRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.ContextClosedEvent;
@@ -14,8 +14,8 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class GracefulShutdownHandler {
+    private final BatchJobProcessEntityRepo batchJobProccessEntityRepo;
 
-    private final JobProcessingRepo jobProcessingRepo;
 
     @EventListener(ContextClosedEvent.class)
     public void handleContextClosed(ContextClosedEvent event) {
@@ -27,7 +27,7 @@ public class GracefulShutdownHandler {
         try {
             // TODO : testing need to be done for this hook
             // Find all jobs with PROCESSING status
-            List<JobBatchProcessingEntity> processingJobs = jobProcessingRepo.findByStatusAndWorkerNode(BatchStatusEnum.PROCESSING.name() ,workerNodeName() );
+            List<BatchJobProcessEntity> processingJobs = batchJobProccessEntityRepo.findByStatusAndWorkerNode(BatchJobStatusEnum.PROCESSING.name() ,workerNodeName() );
 
             if (processingJobs.isEmpty()) {
                 log.info("No processing jobs found");
@@ -35,9 +35,9 @@ public class GracefulShutdownHandler {
             }
 
             processingJobs.forEach(job -> {
-                job.setStatus(BatchStatusEnum.FAILED.name());
+                job.setStatus(BatchJobStatusEnum.FAILED.name());
                 job.setCompletedAt(LocalDateTime.now());
-                jobProcessingRepo.save(job);
+                batchJobProccessEntityRepo.save(job);
                 log.warn("Marked job as FAILED: jobId={}, batchId={}, jobType={}", job.getJobId(), job.getBatchId(), job.getJobType());
             });
 

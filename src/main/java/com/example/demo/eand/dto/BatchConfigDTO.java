@@ -1,6 +1,6 @@
 package com.example.demo.eand.dto;
 
-import com.example.demo.eand.enums.JobTypeEnum;
+import com.example.demo.eand.enums.BatchJobTypeEnum;
 import lombok.*;
 
 
@@ -11,7 +11,7 @@ import lombok.*;
 @Builder
 public class BatchConfigDTO {
     private String jpaSqlCommand;
-    private JobTypeEnum jobType;
+    private BatchJobTypeEnum jobType;
     private Integer retryCount;
     private Integer batchChunkSize;
     private Integer paginationSize;

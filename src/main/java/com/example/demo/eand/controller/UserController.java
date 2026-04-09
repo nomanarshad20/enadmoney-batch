@@ -1,9 +1,9 @@
 package com.example.demo.eand.controller;
 
 
+import com.example.demo.eand.dto.BatchProcessingRequestDTO;
 import com.example.demo.eand.dto.JobBatchProcessingDto;
 import com.example.demo.eand.factory.BatchJobRoutingService;
-import com.example.demo.eand.pc.ConsumerClient;
 import com.example.demo.eand.service.UserServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,8 +16,6 @@ public class UserController {
 
     private final UserServiceImpl appUserService;
 
-    private final ConsumerClient consumerClient;
-
     private final BatchJobRoutingService batchJobRoutingService;
 
 
@@ -27,10 +25,17 @@ public class UserController {
     }
 
 
-    @PostMapping("/consumer")
-    public ResponseEntity<?> createUser(@RequestBody JobBatchProcessingDto dto) {
-        batchJobRoutingService.process(dto);
-        return ResponseEntity.ok("SUCCESS");
-    }
+
+
+
+
+
+
+    // Today :
+    // re initiate failed or pending batch jobs by api.: submit to quee
+    // retry failed batch jobs after finishing the current job.
+    // re initiate current batch job if failed
+    // performance testing with different batch size and number of jobs
+    // implement tread span id for tracing purpose
 
 }

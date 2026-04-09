@@ -1,8 +1,9 @@
-package com.example.demo.eand.job.processor;
+package com.example.demo.eand.consumers;
 
 
 import com.example.demo.eand.dto.JobBatchProcessingDto;
-import com.example.demo.eand.enums.JobTypeEnum;
+import com.example.demo.eand.enums.BatchJobTypeEnum;
+import com.example.demo.eand.job.processor.BatchJobProcessor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -11,8 +12,8 @@ import org.springframework.stereotype.Component;
 public class DormantUserBatchProcessor implements BatchJobProcessor {
 
     @Override
-    public JobTypeEnum getJobType() {
-        return JobTypeEnum.DORMANT_USER;
+    public BatchJobTypeEnum getJobType() {
+        return BatchJobTypeEnum.DORMANT_USER;
     }
 
     @Override

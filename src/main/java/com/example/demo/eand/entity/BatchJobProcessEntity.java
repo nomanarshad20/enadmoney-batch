@@ -1,8 +1,9 @@
 package com.example.demo.eand.entity;
 
-import com.example.demo.eand.enums.BatchStatusEnum;
+import com.example.demo.eand.enums.BatchJobStatusEnum;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Where;
 
 import java.time.LocalDateTime;
 
@@ -13,12 +14,16 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class JobBatchProcessingEntity {
+@Where(clause = "active_ind = true")
+public class BatchJobProcessEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
+
+    @Column(name = "active_ind" ,nullable = false,  columnDefinition = "boolean default true")
+    private Boolean activeInd = true;
 
     @Column(name = "job_id")
     private String jobId;
@@ -82,7 +87,7 @@ public class JobBatchProcessingEntity {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         if (this.status == null) {
-            this.status = BatchStatusEnum.PENDING.name();
+            this.status = BatchJobStatusEnum.INITIATED.name();
         }
         if (this.processedRecords == null) {
             this.processedRecords = 0;

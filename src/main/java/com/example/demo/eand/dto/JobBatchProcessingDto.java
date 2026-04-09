@@ -1,6 +1,6 @@
 package com.example.demo.eand.dto;
 
-import com.example.demo.eand.enums.JobTypeEnum;
+import com.example.demo.eand.enums.BatchJobTypeEnum;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -23,7 +23,7 @@ public class JobBatchProcessingDto {
     private Integer processedRecords;
     private Integer failedRecords;
 
-    private JobTypeEnum jobType;
+    private BatchJobTypeEnum jobType;
     private String status;
     private Integer retryCount;
 

@@ -1,11 +1,11 @@
 package com.example.demo.eand.job.processor;
 
 import com.example.demo.eand.dto.JobBatchProcessingDto;
-import com.example.demo.eand.enums.JobTypeEnum;
+import com.example.demo.eand.enums.BatchJobTypeEnum;
 
 public interface BatchJobProcessor {
 
-    JobTypeEnum getJobType();
+    BatchJobTypeEnum getJobType();
 
     void processBatchJob(JobBatchProcessingDto jobDto);
 }

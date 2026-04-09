@@ -1,6 +1,6 @@
 package com.example.demo.eand.factory;
 
-import com.example.demo.eand.enums.JobTypeEnum;
+import com.example.demo.eand.enums.BatchJobTypeEnum;
 import com.example.demo.eand.job.processor.BatchJobProcessor;
 import org.springframework.stereotype.Component;
 
@@ -10,7 +10,7 @@ import java.util.Map;
 
 @Component
 public class BatchJobProcessorFactory {
-    private final Map<JobTypeEnum, BatchJobProcessor> processorMap = new EnumMap<>(JobTypeEnum.class);
+    private final Map<BatchJobTypeEnum, BatchJobProcessor> processorMap = new EnumMap<>(BatchJobTypeEnum.class);
 
     public BatchJobProcessorFactory(List<BatchJobProcessor> processors) {
         for (BatchJobProcessor processor : processors) {
@@ -18,7 +18,7 @@ public class BatchJobProcessorFactory {
         }
     }
 
-    public BatchJobProcessor getProcessor(JobTypeEnum jobType) {
+    public BatchJobProcessor getProcessor(BatchJobTypeEnum jobType) {
         BatchJobProcessor processor = processorMap.get(jobType);
 
         if (processor == null) {

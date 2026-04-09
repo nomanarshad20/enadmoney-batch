@@ -1,10 +1,9 @@
 package com.example.demo.eand.job.processor;
 
 import com.example.demo.eand.dto.JobBatchProcessingDto;
-import com.example.demo.eand.entity.JobBatchProcessingEntity;
-import com.example.demo.eand.enums.BatchStatusEnum;
-import com.example.demo.eand.repo.JobProcessingRepo;
-import lombok.RequiredArgsConstructor;
+import com.example.demo.eand.entity.BatchJobProcessEntity;
+import com.example.demo.eand.enums.BatchJobStatusEnum;
+import com.example.demo.eand.repo.BatchJobProcessEntityRepo;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
@@ -16,9 +15,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
-public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor {
+public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobProcessor {
 
-    private final JobProcessingRepo jobProcessingRepo;
+    private final BatchJobProcessEntityRepo batchJobProccessEntityRepo;
 
 
     //------------------------------------------------------------------------------------------------
@@ -34,9 +33,6 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
     protected abstract void processRecords(List<T> records, AtomicInteger processedCount, AtomicInteger failedCount);
 
     protected abstract long getLastId(List<T> records);
-
-    protected abstract int countRecords(JobBatchProcessingDto dto);
-
 
     //------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------
@@ -54,21 +50,23 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
     public void processBatchJob(JobBatchProcessingDto jobBatchProcessingDto) {
         log.info("BATCH JOBS : INITIATION : Processing batch job. jobId={}, batchId={}", jobBatchProcessingDto.getJobId(), jobBatchProcessingDto.getBatchId());
 
-        JobBatchProcessingEntity batch = markRunningBatchEntity(jobBatchProcessingDto);
+        BatchJobProcessEntity batch = markRunningBatchEntity(jobBatchProcessingDto);
         final JobBatchProcessingDto jobDto = jobBatchProcessingEntityToDTO(batch);
 
         logStart(jobDto);
         AtomicInteger processedCount = new AtomicInteger(0);
         AtomicInteger failedCount = new AtomicInteger(0);
+        AtomicInteger totalRecordsCount = new AtomicInteger(0);
 
         try {
-            processWithPagination(jobDto, batch, processedCount, failedCount);
+            processWithPagination(jobDto, batch, processedCount, failedCount ,totalRecordsCount);
 
+            batch.setTotalRecords(totalRecordsCount.get());
             batch.setProcessedRecords(processedCount.get());
             batch.setFailedRecords(failedCount.get());
-            batch.setStatus(BatchStatusEnum.COMPLETED.name());
+            batch.setStatus(BatchJobStatusEnum.COMPLETED.name());
             batch.setCompletedAt(LocalDateTime.now());
-            jobProcessingRepo.save(batch);
+            batchJobProccessEntityRepo.save(batch);
 
             log.info("BATCH JOBS : Batch completed successfully. jobId={}, batchId={}", jobDto.getJobId(), jobDto.getBatchId());
 
@@ -77,9 +75,9 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
 
             batch.setProcessedRecords(processedCount.get());
             batch.setFailedRecords(failedCount.get());
-            batch.setStatus(BatchStatusEnum.FAILED.name());
+            batch.setStatus(BatchJobStatusEnum.FAILED.name());
             batch.setCompletedAt(LocalDateTime.now());
-            jobProcessingRepo.save(batch);
+            batchJobProccessEntityRepo.save(batch);
 
             throw new RuntimeException("BATCH JOBS : Batch processing failed", ex);
         }
@@ -95,7 +93,7 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
     //------------------------------------------------------------------------------------------------
 
 
-    private void processWithPagination(JobBatchProcessingDto dto, JobBatchProcessingEntity batch, AtomicInteger processedCount, AtomicInteger failedCount) {
+    private void processWithPagination(JobBatchProcessingDto dto, BatchJobProcessEntity batch, AtomicInteger processedCount, AtomicInteger failedCount , AtomicInteger totalRecordsCount) {
         ExecutorService executorService = Executors.newFixedThreadPool(batch.getExecutorPoolSize());
 
         try {
@@ -113,6 +111,7 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
                     break;
                 }
 
+                totalRecordsCount.addAndGet(records.size());
                 long lastId = getLastId(records);
                 int pageNo = currentPage++;
 
@@ -142,8 +141,8 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
         }
     }
 
-    protected JobBatchProcessingEntity markRunningBatchEntity(JobBatchProcessingDto dto) {
-        JobBatchProcessingEntity batch = jobProcessingRepo.findByJobIdAndBatchIdAndJobType(
+    protected BatchJobProcessEntity markRunningBatchEntity(JobBatchProcessingDto dto) {
+        BatchJobProcessEntity batch = batchJobProccessEntityRepo.findByJobIdAndBatchIdAndJobType(
                 dto.getJobId(),
                 dto.getBatchId(),
                 dto.getJobType().name());
@@ -153,10 +152,14 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
                     "BATCH JOBS : Batch not found for jobId=" + dto.getJobId() + ", batchId=" + dto.getBatchId() + ", jobType=" + dto.getJobType());
         }
 
-        batch.setStatus(BatchStatusEnum.PROCESSING.name());
+        batch.setWorkerNode( workerNodeName() );
+        batch.setStatus(BatchJobStatusEnum.PROCESSING.name());
         batch.setStartedAt(LocalDateTime.now());
-        batch.setTotalRecords(countRecords(dto));
-        return jobProcessingRepo.save(batch);
+        return batchJobProccessEntityRepo.save(batch);
+    }
+
+    protected String workerNodeName() {
+        return "Worker_localhost_node";
     }
 
     protected void logStart(JobBatchProcessingDto jobDto) {
@@ -169,11 +172,11 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
                 jobDto.getJobType(), jobDto.getJobId(), jobDto.getBatchId());
     }
 
-    protected AbstractBatchJobProcessor(JobProcessingRepo jobProcessingRepo) {
-        this.jobProcessingRepo = jobProcessingRepo;
+    protected AbstractBatchJobConsumerProcessor(BatchJobProcessEntityRepo batchJobProccessEntityRepo) {
+        this.batchJobProccessEntityRepo = batchJobProccessEntityRepo;
     }
 
-    private JobBatchProcessingDto jobBatchProcessingEntityToDTO(JobBatchProcessingEntity entity) {
+    private JobBatchProcessingDto jobBatchProcessingEntityToDTO(BatchJobProcessEntity entity) {
         return JobBatchProcessingDto.builder()
                 .id(entity.getId())
                 .jobId(entity.getJobId())
@@ -185,7 +188,7 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
                 .failedRecords(entity.getFailedRecords())
                 .status(entity.getStatus())
                 .retryCount(entity.getRetryCount())
-                .workerNode(entity.getWorkerNode())
+                //.workerNode(entity.getWorkerNode())
                 .createdAt(entity.getCreatedAt())
                 .startedAt(entity.getStartedAt())
                 .completedAt(entity.getCompletedAt())
@@ -194,5 +197,8 @@ public abstract class AbstractBatchJobProcessor<T> implements BatchJobProcessor 
                 .batchChunkSize(entity.getBatchChunkSize())
                 .build();
     }
+
+
+
 
 }

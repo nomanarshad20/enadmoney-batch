@@ -1,12 +1,14 @@
-package com.example.demo.eand.service;
+package com.example.demo.eand.publisher;
 
 import com.example.demo.eand.client.EandClient;
 import com.example.demo.eand.dto.BatchConfigDTO;
+import com.example.demo.eand.dto.BatchProcessingRequestDTO;
 import com.example.demo.eand.dto.JobBatchProcessingDto;
 
-import com.example.demo.eand.entity.JobBatchProcessingEntity;
-import com.example.demo.eand.enums.BatchStatusEnum;
-import com.example.demo.eand.repo.JobProcessingRepo;
+import com.example.demo.eand.entity.BatchJobProcessEntity;
+import com.example.demo.eand.enums.BatchJobStatusEnum;
+import com.example.demo.eand.enums.BatchJobTypeEnum;
+import com.example.demo.eand.repo.BatchJobProcessEntityRepo;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.AllArgsConstructor;
@@ -21,9 +23,9 @@ import java.util.UUID;
 @Slf4j
 @Service
 @AllArgsConstructor
-public class JobBatchingPublisherServiceImpl implements JobBatchingPublisherService {
+public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
 
-    private final JobProcessingRepo jobProcessingRepo;
+    private final BatchJobProcessEntityRepo batchJobProccessEntityRepo;
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -55,6 +57,30 @@ public class JobBatchingPublisherServiceImpl implements JobBatchingPublisherServ
     }
 
 
+
+    /**
+     * 1. JobId : to identify the job and its needed parameter
+     * 2. BatchId : optional: to target specific batch processing : if not provided, it will process all the batches which are failed or pending
+     * 3. Status : optional: to target specific batch processing type : if not provided, it will process Failed batch only
+     *  @param dto
+     */
+    @Override
+    public String reInitiateOldJobBatchingProcess(BatchProcessingRequestDTO dto) {
+
+        //STEP 1: prepare the batch list DTO from existing batch entity and mark the old batch as inactive
+        List<JobBatchProcessingDto> batchList = prepareDtoAndMarkOldBatchInactive(dto);
+
+        //STEP 2: save the batch entity to DB
+        saveJobBatchTemplate(batchList);
+
+        //STEP 3: Submit the batch list to the queue
+        submitJobBatchTemplate(batchList);
+        return "Submitted to queue";
+    }
+
+
+
+
     //------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------
     //-------------------------- Private methods below -----------------------------------------------
@@ -77,7 +103,8 @@ public class JobBatchingPublisherServiceImpl implements JobBatchingPublisherServ
 
         while (true) {
             JobBatchProcessingDto dto = prepareDefaultDTO(batchConfigDTO, jobId, batchId, startId);
-            List<Long> userIdsList = fetchUserIds(batchConfigDTO.getJpaSqlCommand(), startId, batchConfigDTO.getBatchChunkSize()); // TODO :Call transactional methods via an injected dependency
+            // TODO :Call transactional methods via an injected dependency
+            List<Long> userIdsList = fetchUserIds(batchConfigDTO.getJpaSqlCommand(), startId, batchConfigDTO.getBatchChunkSize());
             if (null == userIdsList || userIdsList.isEmpty()) {
                 log.info("No more records found. Stopping processing.");
                 break;
@@ -117,13 +144,13 @@ public class JobBatchingPublisherServiceImpl implements JobBatchingPublisherServ
      * @param jobBatchProcessingDto
      */
     private void saveJobBatchTemplate(List<JobBatchProcessingDto> jobBatchProcessingDto) {
-        List<JobBatchProcessingEntity> savedBatchEntityList = new ArrayList<>();
+        List<BatchJobProcessEntity> savedBatchEntityList = new ArrayList<>();
         jobBatchProcessingDto.forEach(batch -> {
             log.info("Job Batch Template : {}", batch);
             savedBatchEntityList.add(toEntity(batch));
 
         });
-        jobProcessingRepo.saveAll(savedBatchEntityList);
+        batchJobProccessEntityRepo.saveAll(savedBatchEntityList);
     }
 
     /**
@@ -143,16 +170,17 @@ public class JobBatchingPublisherServiceImpl implements JobBatchingPublisherServ
     }
 
 
-    private JobBatchProcessingEntity toEntity(JobBatchProcessingDto dto) {
-        return JobBatchProcessingEntity.builder()
+    private BatchJobProcessEntity toEntity(JobBatchProcessingDto dto) {
+        return BatchJobProcessEntity.builder()
                 .jobId(dto.getJobId())
                 .batchId(dto.getBatchId())
                 .startId(dto.getStartId())
                 .endId(dto.getEndId())
                 .totalRecords(dto.getTotalRecords())
                 .retryCount(dto.getRetryCount() != null ? dto.getRetryCount() : 1) // Default : 1
-                .status(dto.getStatus() != null ? dto.getStatus() : BatchStatusEnum.PENDING.name())
+                .status(dto.getStatus() != null ? dto.getStatus() : BatchJobStatusEnum.INITIATED.name())
                 .workerNode(dto.getWorkerNode())
+                .retryCount(dto.getRetryCount())
                 .paginationSize(dto.getPaginationSize())
                 .executorPoolSize(dto.getExecutorPoolSize())
                 .batchChunkSize(dto.getBatchChunkSize())
@@ -166,9 +194,10 @@ public class JobBatchingPublisherServiceImpl implements JobBatchingPublisherServ
                 .batchId(batchId)
                 .startId(startId)
                 .jobType(batchConfigDTO.getJobType())
-                .status(BatchStatusEnum.PENDING.name())
+                .status(BatchJobStatusEnum.INITIATED.name())
                 .retryCount(batchConfigDTO.getRetryCount())
-                .workerNode(workerNodeName())
+                .parentWorkerNode(workerNodeName())
+                //.workerNode(workerNodeName())
                 .batchChunkSize(batchConfigDTO.getBatchChunkSize())
                 .paginationSize(batchConfigDTO.getPaginationSize())
                 .executorPoolSize(batchConfigDTO.getExecutorPoolSize())
@@ -177,11 +206,11 @@ public class JobBatchingPublisherServiceImpl implements JobBatchingPublisherServ
 
 
     private String workerNodeName() {
-        return "Worker_localhost_node";
+        return "Parent_Worker_localhost_node";
     }
 
 
-    private JobBatchProcessingDto toDTO(JobBatchProcessingEntity entity) {
+    private JobBatchProcessingDto toDTO(BatchJobProcessEntity entity) {
         return JobBatchProcessingDto.builder()
                 .id(entity.getId())
                 .jobId(entity.getJobId())
@@ -201,5 +230,65 @@ public class JobBatchingPublisherServiceImpl implements JobBatchingPublisherServ
                 .executorPoolSize(entity.getExecutorPoolSize())
                 .build();
     }
+
+
+
+
+    private List<JobBatchProcessingDto> prepareDtoAndMarkOldBatchInactive(BatchProcessingRequestDTO dto) {
+        List<JobBatchProcessingDto> batchList = new ArrayList<>();
+
+        // fetch the batch entity from DB
+        List<BatchJobProcessEntity> savedBatchEntityList = findBatches(dto.getJobId(), dto.getBatchId(), dto.getStatus());
+
+        if (null == savedBatchEntityList  || savedBatchEntityList.isEmpty()) {
+            throw new RuntimeException("No batches found for the given criteria");
+        }
+
+        // prepare the batch list DTO and reset the status and startedAt fields etc
+        savedBatchEntityList.forEach(batch -> {
+
+            batchList.add( JobBatchProcessingDto.builder()
+                    .jobId(batch.getJobId())
+                    .batchId(batch.getBatchId())
+                    .startId(batch.getStartId())
+                    .jobType(BatchJobTypeEnum.fromString(batch.getJobType()) )
+                    .status(BatchJobStatusEnum.INITIATED.name())
+                    .retryCount(batch.getRetryCount() + 1 )
+                    .parentWorkerNode(workerNodeName())
+                    //.workerNode(workerNodeName())
+                    .batchChunkSize(batch.getBatchChunkSize())
+                    .paginationSize(batch.getPaginationSize())
+                    .executorPoolSize(batch.getExecutorPoolSize())
+                    .build());
+
+            // marked the old batch as inactive
+            batch.setActiveInd(false);
+            batchJobProccessEntityRepo.save(batch);
+        });
+
+        return batchList;
+    }
+
+    public List<BatchJobProcessEntity> findBatches(String jobId, Long batchId, BatchJobStatusEnum status) {
+
+        if (jobId == null || jobId.isBlank()) {
+            throw new IllegalArgumentException("jobId is required");
+        }
+
+        if (batchId != null && status != null) {
+            return batchJobProccessEntityRepo.findByJobIdAndBatchIdAndStatus(jobId, batchId, status.name());
+        }
+
+        if (batchId != null) {
+            return batchJobProccessEntityRepo.findByJobIdAndBatchId(jobId, batchId);
+        }
+
+        if (status != null) {
+            return batchJobProccessEntityRepo.findByJobIdAndStatus(jobId, status.name());
+        }
+
+        return batchJobProccessEntityRepo.findByJobId(jobId);
+    }
+
 
 }

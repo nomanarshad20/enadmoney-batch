@@ -1,9 +1,9 @@
-package com.example.demo.eand.job.processor;
+package com.example.demo.eand.consumers;
 
-import com.example.demo.eand.dto.JobBatchProcessingDto;
 import com.example.demo.eand.entity.UserEntity;
-import com.example.demo.eand.enums.JobTypeEnum;
-import com.example.demo.eand.repo.JobProcessingRepo;
+import com.example.demo.eand.enums.BatchJobTypeEnum;
+import com.example.demo.eand.job.processor.AbstractBatchJobConsumerProcessor;
+import com.example.demo.eand.repo.BatchJobProcessEntityRepo;
 import com.example.demo.eand.repo.UserEntityRepo;
 import com.example.demo.eand.service.UserServiceImpl;
 import lombok.extern.slf4j.Slf4j;
@@ -14,20 +14,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Component
-public class InactiveUserBatchProcessor extends AbstractBatchJobProcessor<UserEntity> {
+public class InactiveUserBatchProcessor extends AbstractBatchJobConsumerProcessor<UserEntity> {
 
     private final UserServiceImpl userServiceImpl;
     private final  UserEntityRepo userRepository;
 
-    public InactiveUserBatchProcessor(JobProcessingRepo jobProcessingRepo, UserServiceImpl userServiceImpl, UserEntityRepo userRepository) {
-        super(jobProcessingRepo);
+    public InactiveUserBatchProcessor(BatchJobProcessEntityRepo batchJobProccessEntityRepo, UserServiceImpl userServiceImpl, UserEntityRepo userRepository) {
+        super(batchJobProccessEntityRepo);
         this.userServiceImpl = userServiceImpl;
         this.userRepository = userRepository;
     }
 
     @Override
-    public JobTypeEnum getJobType() {
-        return JobTypeEnum.INACTIVE_USER;
+    public BatchJobTypeEnum getJobType() {
+        return BatchJobTypeEnum.INACTIVE_USER;
     }
 
     @Override
@@ -44,11 +44,5 @@ public class InactiveUserBatchProcessor extends AbstractBatchJobProcessor<UserEn
     protected long getLastId(List<UserEntity> records) {
         return records.get(records.size() - 1).getId();
     }
-
-    @Override
-    protected int countRecords(JobBatchProcessingDto dto) {
-        return (int) userRepository.countByIdBetween(dto.getStartId(), dto.getEndId());
-    }
-
 
 }

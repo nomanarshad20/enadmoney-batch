@@ -2,8 +2,8 @@ package com.example.demo.eand.service;
 
 import com.example.demo.eand.dto.BatchConfigDTO;
 import com.example.demo.eand.entity.UserEntity;
-import com.example.demo.eand.enums.JobTypeEnum;
-import com.example.demo.eand.repo.JobProcessingRepo;
+import com.example.demo.eand.enums.BatchJobTypeEnum;
+import com.example.demo.eand.publisher.BatchJobPublisherService;
 import com.example.demo.eand.repo.UserEntityRepo;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,9 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @AllArgsConstructor
 public class UserServiceImpl {
 
-    private final JobBatchingPublisherService jobProcessingTemplateService;
-    private final JobProcessingRepo jobProcessingRepo;
-
+    private final BatchJobPublisherService jobProcessingTemplateService;
     private final UserEntityRepo userRepository;
 
     // SCHEDULER INITIATION PROCESS
@@ -28,7 +26,7 @@ public class UserServiceImpl {
         // Initiate the job batching process
         BatchConfigDTO dto = BatchConfigDTO.builder()
                 .jpaSqlCommand(getSQL())
-                .jobType(JobTypeEnum.INACTIVE_USER)
+                .jobType(BatchJobTypeEnum.INACTIVE_USER)
                 .retryCount(3)
                 .batchChunkSize(1000)
                 .paginationSize(500)
@@ -62,12 +60,11 @@ public class UserServiceImpl {
 
 
     public void inactiveUserMark(List<UserEntity> users, AtomicInteger processedCount, AtomicInteger failedCount) {
-
         try {
             for (UserEntity user : users) {
                 user.setStatus("INACTIVE"); // inactive
             }
-           // userRepository.saveAll(users);
+            userRepository.saveAll(users);
             processedCount.addAndGet(users.size());
             log.info("Processed page successfully. recordCount={}", users.size());
         } catch (Exception ex) {
@@ -75,6 +72,9 @@ public class UserServiceImpl {
             log.error("Failed to process page. recordCount={}", users.size(), ex);
         }
     }
+
+
+
 }
 
 
