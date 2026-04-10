@@ -202,7 +202,7 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
                 dto.getStatus());
 
         if (null == savedBatchEntityList || savedBatchEntityList.isEmpty()) {
-            log.warn("BATCH JOB : Publisher - No batches found for the given criteria: {}", getWriteValueAsString(dto));
+            log.info("BATCH JOB : Publisher - No batches found for the given criteria: {}", getWriteValueAsString(dto));
             return null;
         }
 
