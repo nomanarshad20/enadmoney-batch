@@ -5,6 +5,7 @@ import com.example.demo.eand.enums.BatchJobTypeEnum;
 import com.example.demo.eand.job.processor.AbstractBatchJobConsumerProcessor;
 import com.example.demo.eand.repo.BatchJobProcessEntityRepo;
 import com.example.demo.eand.repo.UserEntityRepo;
+import com.example.demo.eand.service.UserService;
 import com.example.demo.eand.service.UserServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.BeanFactory;
@@ -18,16 +19,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component
 public class InactiveUserBatchProcessor extends AbstractBatchJobConsumerProcessor<UserEntity> {
 
-    private final UserServiceImpl userServiceImpl;
+    private final UserService userService;
     private final  UserEntityRepo userRepository;
 
-    public InactiveUserBatchProcessor(BatchJobProcessEntityRepo batchJobProccessEntityRepo, 
-                                     UserServiceImpl userServiceImpl, 
+    public InactiveUserBatchProcessor(BatchJobProcessEntityRepo batchJobProccessEntityRepo,
+                                      UserService userService,
                                      UserEntityRepo userRepository,
                                      BeanFactory beanFactory,
                                      Tracer tracer) {
         super(batchJobProccessEntityRepo, beanFactory, tracer);
-        this.userServiceImpl = userServiceImpl;
+        this.userService = userService;
         this.userRepository = userRepository;
     }
 
@@ -43,7 +44,7 @@ public class InactiveUserBatchProcessor extends AbstractBatchJobConsumerProcesso
 
     @Override
     protected void processRecords(List<UserEntity> records, AtomicInteger processedCount, AtomicInteger failedCount, String jobId, Long batchId) {
-        userServiceImpl.inactiveUserMark(records, processedCount, failedCount);
+        userService.inactiveUserMark(records, processedCount, failedCount ,jobId ,batchId );
     }
 
     @Override

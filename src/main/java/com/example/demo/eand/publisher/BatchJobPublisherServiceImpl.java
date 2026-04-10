@@ -181,13 +181,15 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
      */
     private void submitJobBatchTemplate(List<JobBatchProcessingDto> preparingBatchList) {
         log.info("BATCH JOB : Publisher - Submitting {} job batches to queue", preparingBatchList.size());
-        // SUBMIT JOB BATCH TEMPLATE TO QUEUE
-        // NOTE : Eand will be responsible for submitting the job to the queue
-        preparingBatchList.forEach(batch -> log.info("BATCH JOB : Publisher - Job Batch Template : {}", batch));
 
         preparingBatchList.stream().forEach(batch -> {
             log.info("BATCH JOB : Publisher - Job Batch Template (JSON) : {}", getWriteValueAsString(batch));
-            EandClient.callPostAPI(batch);
+            try{
+                EandClient.callPostAPI(batch);
+            }catch(Exception e){
+                log.error("BATCH JOB : Publisher - Error in submitJobBatchTemplate: {}", e.getMessage());
+            }
+
         });
         log.info("BATCH JOB : Publisher - All batches submitted to queue");
     }

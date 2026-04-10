@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 @Service
 @AllArgsConstructor
-public class UserServiceImpl {
+public class UserServiceImpl implements UserService{
 
     private final BatchJobPublisherService jobProcessingTemplateService;
     private final UserEntityRepo userRepository;
@@ -30,7 +30,7 @@ public class UserServiceImpl {
                 .retryCount(3)
                 .batchChunkSize(1000)
                 .paginationSize(300)
-                .executorPoolSize(10)
+                .executorPoolSize(2)
                 .build();
         jobProcessingTemplateService.initiateJobBatching(dto);
 
@@ -59,17 +59,31 @@ public class UserServiceImpl {
     //--------------------------------------------------------------------------------
 
 
-    public void inactiveUserMark(List<UserEntity> users, AtomicInteger processedCount, AtomicInteger failedCount) {
+    public void inactiveUserMark(List<UserEntity> users, AtomicInteger processedCount, AtomicInteger failedCount ,String jobId, Long batchId) {
         try {
             for (UserEntity user : users) {
+
+                if( user.getId() == 5500){
+                    log.error("test -  exception behavior jobId={} batchId={}" , jobId , batchId);
+                   // throw new RuntimeException("test -  exception behavior");
+                }
+
+                if(user.getId() == 7000 ){
+                    log.error("test -  exception behavior jobId={} batchId={}" , jobId , batchId);
+                    failedCount.incrementAndGet();
+                    continue;
+                }
+
+
                 user.setStatus("INACTIVE"); // inactive
+                userRepository.save(user);
+                processedCount.incrementAndGet();
             }
-            userRepository.saveAll(users);
-            processedCount.addAndGet(users.size());
             log.info("Processed page successfully. recordCount={}", users.size());
         } catch (Exception ex) {
-            failedCount.addAndGet(users.size());
+            failedCount.incrementAndGet();
             log.error("Failed to process page. recordCount={}", users.size(), ex);
+            throw new RuntimeException("test -  exception behavior");
         }
     }
 

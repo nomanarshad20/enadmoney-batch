@@ -199,9 +199,8 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
 
         BatchJobProcessEntity saved = batchJobProcessEntityRepo.save(batch);
 
-        log.info("BATCH JOB | Consumer | MARK_RUNNING_COMPLETED | Mark running completed | jobId={} | batchId={} | status={} | traceId={} | spanId={}",
+        log.info("BATCH JOB | Consumer | MARKED PROCESSING | Mark running completed | jobId={} | batchId={} | status={} | traceId={} | spanId={}",
                 saved.getJobId(), saved.getBatchId(), saved.getStatus(), traceId(), spanId());
-
         return saved;
     }
 
@@ -211,13 +210,13 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
 
     protected void logStart(JobBatchProcessingDto jobDto) {
         log.info(
-                "BATCH JOB | Consumer | STARTING | Starting | jobType={} | jobId={} | batchId={} | traceId={} | spanId={}",
+                "BATCH JOB | Consumer | STARTING | jobType={} | jobId={} | batchId={} | traceId={} | spanId={}",
                 jobDto.getJobType(), jobDto.getJobId(), jobDto.getBatchId(), traceId(), spanId());
     }
 
     protected void logEnd(JobBatchProcessingDto jobDto) {
         log.info(
-                "BATCH JOB | Consumer | COMPLETED | Completed | jobType={} | jobId={} | batchId={} | traceId={} | spanId={}",
+                "BATCH JOB | Consumer | COMPLETED | jobType={} | jobId={} | batchId={} | traceId={} | spanId={}",
                 jobDto.getJobType(), jobDto.getJobId(), jobDto.getBatchId(), traceId(), spanId());
     }
 

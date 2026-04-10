@@ -1,0 +1,14 @@
+
+
+
+Batch job processing
+testing : 3,10,26 , 4,10,26 onward
+
+
+Force Fail during pagination Runtime Exception behavior:
+expected behavior :
+*  page should be displayed
+*  page processed and failed record should be displayed
+*  out of 10 pod 2 batch should be failed
+*  status of batch should be failed
+*  on Retry methods call same pod should be processed and sent to queue again
