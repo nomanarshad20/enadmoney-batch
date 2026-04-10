@@ -9,5 +9,4 @@ public interface BatchJobProcessor {
 
     void processBatchJob(JobBatchProcessingDto jobDto);
 
-    void reInitiateFailedJobBatchingProcess(JobBatchProcessingDto jobDto);
 }

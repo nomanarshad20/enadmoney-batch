@@ -1,15 +1,14 @@
 package com.example.demo.eand.factory;
 
 
-import com.example.demo.eand.dto.BatchProcessingRequestDTO;
 import com.example.demo.eand.dto.JobBatchProcessingDto;
 import com.example.demo.eand.job.processor.BatchJobProcessor;
 import com.example.demo.eand.job.processor.BatchJobReInitiateProcessor;
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class BatchJobRoutingService {
 
     private final BatchJobProcessorFactory processorFactory;
