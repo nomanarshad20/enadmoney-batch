@@ -142,16 +142,14 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
                     Span pageSpan = tracer.nextSpan().name("batch-page-" + pageNo).start();
 
                     try (SpanInScope ws = tracer.withSpan(pageSpan)) {
-                        log.info(
-                                "BATCH JOB | Consumer | PROCESSING_PAGE | Processing page | jobType={} | jobId={} | batchId={} | pageNo={} | pageSize={} | startId={} | endId={} | traceId={} | spanId={}",
+                        log.info("BATCH JOB | Consumer | PROCESSING_PAGE | Processing page | jobType={} | jobId={} | batchId={} | pageNo={} | pageSize={} | startId={} | endId={} | traceId={} | spanId={}",
                                 dto.getJobType(), dto.getJobId(), dto.getBatchId(), pageNo, records.size(), finalStartingId, lastId, traceId(), spanId());
 
                         // any logs inside child implementation will automatically
                         // use this current page span context
                         processRecords(records, processedCount, failedCount, dto.getJobId(), dto.getBatchId());
 
-                        log.info(
-                                "BATCH JOB | Consumer | PAGE_COMPLETED | Page completed | jobType={} | jobId={} | batchId={} | pageNo={} | processedRecords={} | failedRecords={} | traceId={} | spanId={}",
+                        log.info("BATCH JOB | Consumer | PAGE_COMPLETED | Page completed | jobType={} | jobId={} | batchId={} | pageNo={} | processedRecords={} | failedRecords={} | traceId={} | spanId={}",
                                 dto.getJobType(), dto.getJobId(), dto.getBatchId(), pageNo, processedCount.get(), failedCount.get(), traceId(), spanId());
 
                     } catch (Exception ex) {
