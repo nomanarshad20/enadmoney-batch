@@ -110,12 +110,8 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
     // Supporting methods
     // ------------------------------------------------------------
 
-    private void processWithPagination(
-            JobBatchProcessingDto dto,
-            BatchJobProcessEntity batch,
-            AtomicInteger processedCount,
-            AtomicInteger failedCount,
-            AtomicInteger totalRecordsCount) {
+    private void processWithPagination(JobBatchProcessingDto dto, BatchJobProcessEntity batch, AtomicInteger processedCount, AtomicInteger failedCount, AtomicInteger totalRecordsCount) {
+
         ExecutorService delegate = Executors.newFixedThreadPool(batch.getExecutorPoolSize());
         ExecutorService executorService = new TraceableExecutorService(beanFactory, delegate);
 
@@ -126,8 +122,7 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
 
             while (true) {
                 log.info("BATCH JOB | Consumer | PREPARING | Batch preparing | jobType={} | jobId={} | batchId={} | startId={} | endId={} | page={} | traceId={} | spanId={}",
-                        dto.getJobType(), dto.getJobId(), dto.getBatchId(), startingId, dto.getEndId(), currentPage,
-                        traceId(), spanId());
+                        dto.getJobType(), dto.getJobId(), dto.getBatchId(), startingId, dto.getEndId(), currentPage, traceId(), spanId());
 
                 List<T> records = getQueryPaginatedResponse(startingId, dto.getEndId(), dto.getPaginationSize());
 
@@ -160,10 +155,7 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
                                 dto.getJobType(), dto.getJobId(), dto.getBatchId(), pageNo, processedCount.get(), failedCount.get(), traceId(), spanId());
 
                     } catch (Exception ex) {
-                        failedCount.addAndGet(records.size());
-
-                        log.error(
-                                "BATCH JOB | Consumer | PAGE_FAILED | Page processing failed | jobType={} | jobId={} | batchId={} | pageNo={} | traceId={} | spanId={}",
+                        log.error("BATCH JOB | Consumer | PAGE_FAILED | Page processing failed | jobType={} | jobId={} | batchId={} | pageNo={} | traceId={} | spanId={}",
                                 dto.getJobType(), dto.getJobId(), dto.getBatchId(), pageNo, traceId(), spanId(), ex);
 
                         throw new RuntimeException(ex);
