@@ -41,7 +41,7 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
 
     protected abstract List<T> getQueryPaginatedResponse(long startingId, long endId, long pageSize);
 
-    protected abstract void processRecords(List<T> records, AtomicInteger processedCount, AtomicInteger failedCount);
+    protected abstract void processRecords(List<T> records, AtomicInteger processedCount, AtomicInteger failedCount , String jobId , Long batchId);
 
     protected abstract long getLastId(List<T> records);
 
@@ -178,7 +178,7 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
 
                         // any logs inside child implementation will automatically
                         // use this current page span context
-                        processRecords(records, processedCount, failedCount);
+                        processRecords(records, processedCount, failedCount , dto.getJobId() , dto.getBatchId());
 
                         log.info("BATCH JOBS : Page completed | jobType={} jobId={} batchId={} pageNo={} processedCount={} failedCount={} traceId={} spanId={}",
                                 dto.getJobType(),

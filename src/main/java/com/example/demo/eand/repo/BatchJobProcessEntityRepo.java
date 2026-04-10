@@ -4,6 +4,7 @@ import com.example.demo.eand.entity.BatchJobProcessEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 
@@ -23,5 +24,6 @@ public interface BatchJobProcessEntityRepo extends JpaRepository<BatchJobProcess
 
     List<BatchJobProcessEntity> findByStatusAndWorkerNode(String status, String workerNode);
 
+    long countByJobIdAndBatchIdAndJobTypeAndStatusAndActiveIndIn(String jobId, Long batchId, String jobType, String status, Collection<Boolean> activeInds);
 
 }

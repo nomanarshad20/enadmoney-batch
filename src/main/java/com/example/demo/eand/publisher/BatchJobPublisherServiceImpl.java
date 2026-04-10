@@ -28,7 +28,7 @@ import java.util.UUID;
 public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
 
     private final ObjectMapper objectMapper;
-    private final BatchJobProcessEntityRepo batchJobProccessEntityRepo;
+    private final BatchJobProcessEntityRepo batchJobProcessEntityRepo;
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -47,7 +47,7 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
      */
     @Override
     public void initiateJobBatching(BatchConfigDTO batchConfigDTO) {
-        log.info("BATCH JOB : Publiser - Initiating job batching with config: {}", batchConfigDTO);
+        log.info("BATCH JOB : Publisher - Initiating job batching with config: {}", batchConfigDTO);
 
         // STEP 1 : Preprocessing and prepare the batch list DTO
         List<JobBatchProcessingDto> batchList = preprocessingJobBatchTemplate(batchConfigDTO);
@@ -57,7 +57,7 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
 
         // STEP 3 : Submit the batch list to the queue
         submitJobBatchTemplate(batchList);
-        log.info("BATCH JOB : Publiser - Job batching initiation completed successfully");
+        log.info("BATCH JOB : Publisher - Job batching initiation completed successfully");
     }
 
     /**
@@ -71,19 +71,26 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
      */
     @Override
     public String reInitiateOldJobBatchingProcess(BatchProcessingRequestDTO dto) {
-        log.info("BATCH JOB : Publiser - Re-initiating old job batching process for DTO: {}", dto);
+
+        log.info("BATCH JOB : Publisher - Re-initiating old job batching process for DTO: {}", dto);
 
         // STEP 1: prepare the batch list DTO from existing batch entity and mark the
         // old batch as inactive
         List<JobBatchProcessingDto> batchList = prepareDtoAndMarkOldBatchInactive(dto);
+
+        // Validate if the batch list is not empty
+        if (null == batchList || batchList.isEmpty()) {
+            return "No batches found for the given criteria";
+        }
 
         // STEP 2: save the batch entity to DB
         saveJobBatchTemplate(batchList);
 
         // STEP 3: Submit the batch list to the queue
         submitJobBatchTemplate(batchList);
-        log.info("BATCH JOB : Publiser - Re-initiation process completed. Submitted to queue.");
-        return "Submitted to queue";
+
+        log.info("BATCH JOB : Publisher - Re-initiation process completed. Submitted to queue.");
+        return "BATCH JOB : Publisher - Re-initiation process completed. Submitted to queue.";
     }
 
     // ------------------------------------------------------------------------------------------------
@@ -102,7 +109,7 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
      * @return List<JobBatchProcessingDto>
      */
     private List<JobBatchProcessingDto> preprocessingJobBatchTemplate(BatchConfigDTO batchConfigDTO) {
-        log.info("BATCH JOB : Publiser - Starting preprocessing for job batch template");
+        log.info("BATCH JOB : Publisher - Starting preprocessing for job batch template");
         List<JobBatchProcessingDto> preparingBatchList = new ArrayList<>();
         String jobId = UUID.randomUUID().toString();
         Long batchId = 1L;
@@ -115,7 +122,7 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
             List<Long> userIdsList = fetchUserIds(batchConfigDTO.getJpaSqlCommand(), startId,
                     batchConfigDTO.getBatchChunkSize());
             if (null == userIdsList || userIdsList.isEmpty()) {
-                log.info("BATCH JOB : Publiser - No more records found. Stopping processing.");
+                log.info("BATCH JOB : Publisher - No more records found. Stopping processing.");
                 break;
             }
 
@@ -126,7 +133,7 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
             preparingBatchList.add(dto);
         }
 
-        log.info("BATCH JOB : Publiser - Preprocessing completed. Total batches prepared: {}",
+        log.info("BATCH JOB : Publisher - Preprocessing completed. Total batches prepared: {}",
                 preparingBatchList.size());
         return preparingBatchList;
     }
@@ -141,13 +148,13 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
      */
     @Transactional(readOnly = true)
     public List<Long> fetchUserIds(String sql, Long startId, int pageSize) {
-        log.info("BATCH JOB : Publiser - Fetching user IDs with startId: {} and pageSize: {}", startId, pageSize);
+        log.info("BATCH JOB : Publisher - Fetching user IDs with startId: {} and pageSize: {}", startId, pageSize);
         @SuppressWarnings("unchecked")
         List<Long> rawResults = entityManager.createNativeQuery(sql)
                 .setParameter("startId", startId)
                 .setParameter("pageSize", pageSize)
                 .getResultList();
-        log.info("BATCH JOB : Publiser - Fetched {} records", rawResults != null ? rawResults.size() : 0);
+        log.info("BATCH JOB : Publisher - Fetched {} records", rawResults != null ? rawResults.size() : 0);
         return rawResults;
     }
 
@@ -157,14 +164,14 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
      * @param jobBatchProcessingDto
      */
     private void saveJobBatchTemplate(List<JobBatchProcessingDto> jobBatchProcessingDto) {
-        log.info("BATCH JOB : Publiser - Saving {} job batches to database", jobBatchProcessingDto.size());
+        log.info("BATCH JOB : Publisher - Saving {} job batches to database", jobBatchProcessingDto.size());
         List<BatchJobProcessEntity> savedBatchEntityList = new ArrayList<>();
         jobBatchProcessingDto.forEach(batch -> {
-            log.info("BATCH JOB : Publiser - Job Batch dto saving in database : {}", getWriteValueAsString(batch));
+            log.info("BATCH JOB : Publisher - Job Batch dto saving in database : {}", getWriteValueAsString(batch));
             savedBatchEntityList.add(toEntity(batch));
         });
-        batchJobProccessEntityRepo.saveAll(savedBatchEntityList);
-        log.info("BATCH JOB : Publiser - Successfully saved all job batches to database");
+        batchJobProcessEntityRepo.saveAll(savedBatchEntityList);
+        log.info("BATCH JOB : Publisher - Successfully saved all job batches to database");
     }
 
     /**
@@ -173,20 +180,20 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
      * @param preparingBatchList
      */
     private void submitJobBatchTemplate(List<JobBatchProcessingDto> preparingBatchList) {
-        log.info("BATCH JOB : Publiser - Submitting {} job batches to queue", preparingBatchList.size());
+        log.info("BATCH JOB : Publisher - Submitting {} job batches to queue", preparingBatchList.size());
         // SUBMIT JOB BATCH TEMPLATE TO QUEUE
         // NOTE : Eand will be responsible for submitting the job to the queue
-        preparingBatchList.forEach(batch -> log.info("BATCH JOB : Publiser - Job Batch Template : {}", batch));
+        preparingBatchList.forEach(batch -> log.info("BATCH JOB : Publisher - Job Batch Template : {}", batch));
 
         preparingBatchList.stream().forEach(batch -> {
-            log.info("BATCH JOB : Publiser - Job Batch Template (JSON) : {}", getWriteValueAsString(batch));
+            log.info("BATCH JOB : Publisher - Job Batch Template (JSON) : {}", getWriteValueAsString(batch));
             EandClient.callPostAPI(batch);
         });
-        log.info("BATCH JOB : Publiser - All batches submitted to queue");
+        log.info("BATCH JOB : Publisher - All batches submitted to queue");
     }
 
     private List<JobBatchProcessingDto> prepareDtoAndMarkOldBatchInactive(BatchProcessingRequestDTO dto) {
-        log.info("BATCH JOB : Publiser - Preparing DTO and marking old batches as inactive for JobId: {}",
+        log.info("BATCH JOB : Publisher - Preparing DTO and marking old batches as inactive for JobId: {}",
                 dto.getJobId());
         List<JobBatchProcessingDto> batchList = new ArrayList<>();
 
@@ -195,8 +202,8 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
                 dto.getStatus());
 
         if (null == savedBatchEntityList || savedBatchEntityList.isEmpty()) {
-            log.error("BATCH JOB : Publiser - No batches found for the given criteria: {}", dto);
-            throw new RuntimeException("No batches found for the given criteria");
+            log.warn("BATCH JOB : Publisher - No batches found for the given criteria: {}", getWriteValueAsString(dto));
+            return null;
         }
 
         // prepare the batch list DTO and reset the status and startedAt fields etc
@@ -218,7 +225,7 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
 
             // marked the old batch as inactive
             batch.setActiveInd(false);
-            batchJobProccessEntityRepo.save(batch);
+            batchJobProcessEntityRepo.save(batch);
         });
 
         return batchList;
@@ -231,18 +238,18 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
         }
 
         if (batchId != null && status != null) {
-            return batchJobProccessEntityRepo.findByJobIdAndBatchIdAndStatus(jobId, batchId, status.name());
+            return batchJobProcessEntityRepo.findByJobIdAndBatchIdAndStatus(jobId, batchId, status.name());
         }
 
         if (batchId != null) {
-            return batchJobProccessEntityRepo.findByJobIdAndBatchId(jobId, batchId);
+            return batchJobProcessEntityRepo.findByJobIdAndBatchId(jobId, batchId);
         }
 
         if (status != null) {
-            return batchJobProccessEntityRepo.findByJobIdAndStatus(jobId, status.name());
+            return batchJobProcessEntityRepo.findByJobIdAndStatus(jobId, status.name());
         }
 
-        return batchJobProccessEntityRepo.findByJobId(jobId);
+        return batchJobProcessEntityRepo.findByJobId(jobId);
     }
 
     private BatchJobProcessEntity toEntity(JobBatchProcessingDto dto) {
@@ -306,11 +313,11 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
                 .build();
     }
 
-    private String getWriteValueAsString(JobBatchProcessingDto batch) {
+    private String getWriteValueAsString(Object batch) {
         try {
             return objectMapper.writeValueAsString(batch);
         } catch (Exception e) {
-            log.error("BATCH JOB : Publiser - Error in getWriteValueAsString: {}", e.getMessage());
+            log.error("BATCH JOB : Publisher - Error in getWriteValueAsString: {}", e.getMessage());
         }
         return "Request not parsed successfully";
     }

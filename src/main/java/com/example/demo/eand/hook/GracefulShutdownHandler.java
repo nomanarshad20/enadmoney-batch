@@ -14,43 +14,37 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class GracefulShutdownHandler {
-    private final BatchJobProcessEntityRepo batchJobProccessEntityRepo;
+    private final BatchJobProcessEntityRepo batchJobProcessEntityRepo;
 
 
     @EventListener(ContextClosedEvent.class)
     public void handleContextClosed(ContextClosedEvent event) {
-        log.warn("SHUTDOWN INITIATED - Marking all Batch in-progress jobs as FAILED");
+        log.warn("SHUTDOWN HOOK : INITIATED - Marking all Batch in-progress jobs as FAILED");
         markInProgressJobsAsFailed();
     }
 
     private void markInProgressJobsAsFailed() {
         try {
-            // TODO : testing need to be done for this hook
             // Find all jobs with PROCESSING status
-            List<BatchJobProcessEntity> processingJobs = batchJobProccessEntityRepo.findByStatusAndWorkerNode(BatchJobStatusEnum.PROCESSING.name() ,workerNodeName() );
-
+            List<BatchJobProcessEntity> processingJobs = batchJobProcessEntityRepo.findByStatusAndWorkerNode(BatchJobStatusEnum.PROCESSING.name() ,workerNodeName() );
             if (processingJobs.isEmpty()) {
-                log.info("No processing jobs found");
+                log.info("SHUTDOWN HOOK : No processing jobs found to shutdown and mark as FAILED.");
                 return;
             }
 
             processingJobs.forEach(job -> {
                 job.setStatus(BatchJobStatusEnum.FAILED.name());
                 job.setCompletedAt(LocalDateTime.now());
-                batchJobProccessEntityRepo.save(job);
-                log.warn("Marked job as FAILED: jobId={}, batchId={}, jobType={}", job.getJobId(), job.getBatchId(), job.getJobType());
+                batchJobProcessEntityRepo.save(job);
+                log.warn("SHUTDOWN HOOK : Marked job as FAILED: jobId={}, batchId={}, jobType={}", job.getJobId(), job.getBatchId(), job.getJobType());
             });
-
-            log.warn("✓ Successfully marked {} job(s) as FAILED", processingJobs.size());
-
         } catch (Exception ex) {
-            log.error("Error marking in-progress jobs as FAILED", ex);
+            log.error("SHUTDOWN HOOK : Error marking in-progress jobs as FAILED", ex);
         }
     }
 
     private String workerNodeName() {
         return "Worker_localhost_node";
     }
-
 
 }

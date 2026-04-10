@@ -42,7 +42,7 @@ public class InactiveUserBatchProcessor extends AbstractBatchJobConsumerProcesso
     }
 
     @Override
-    protected void processRecords(List<UserEntity> records, AtomicInteger processedCount, AtomicInteger failedCount) {
+    protected void processRecords(List<UserEntity> records, AtomicInteger processedCount, AtomicInteger failedCount, String jobId, Long batchId) {
         userServiceImpl.inactiveUserMark(records, processedCount, failedCount);
     }
 
