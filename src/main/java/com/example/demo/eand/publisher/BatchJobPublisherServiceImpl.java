@@ -46,7 +46,7 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
      * @param batchConfigDTO
      */
     @Override
-    public void initiateJobBatching(BatchConfigDTO batchConfigDTO) {
+    public void  initiateJobBatching(BatchConfigDTO batchConfigDTO) {
         log.info("BATCH JOB : Publisher - Initiating job batching with config: {}", batchConfigDTO);
 
         // STEP 1 : Preprocessing and prepare the batch list DTO

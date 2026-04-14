@@ -10,6 +10,9 @@ import com.example.demo.eand.service.UserServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.cloud.sleuth.Tracer;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -38,8 +41,14 @@ public class InactiveUserBatchProcessor extends AbstractBatchJobConsumerProcesso
     }
 
     @Override
-    protected List<UserEntity> getQueryPaginatedResponse(long startingId, long endId, long pageSize) {
-        return userRepository.findByIdBetweenOrderByIdAsc(startingId, endId);
+    protected List<UserEntity> getQueryPaginatedResponse(long startingId, long endId, long pageSize ,int pageNumber) {
+
+        Pageable pageable = PageRequest.of(pageNumber, (int) pageSize);
+        Page<UserEntity> res = userRepository.findByIdBetween(startingId, endId, pageable);
+        if (res.hasContent()) {
+            return res.getContent();
+        }
+        return null;
     }
 
     @Override

@@ -13,5 +13,10 @@ public interface UserEntityRepo extends JpaRepository<UserEntity, Long> {
 
     List<UserEntity> findByIdBetweenOrderByIdAsc(Long startId, Long endId);
 
+
+
+
     long countByIdBetween(Long startId, Long endId);
+
+    Page<UserEntity> findByIdBetween(Long idStart, Long idEnd, Pageable pageable);
 }

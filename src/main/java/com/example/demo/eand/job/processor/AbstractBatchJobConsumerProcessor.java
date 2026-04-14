@@ -39,7 +39,7 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
     // Methods to be implemented by child classes
     // ------------------------------------------------------------
 
-    protected abstract List<T> getQueryPaginatedResponse(long startingId, long endId, long pageSize);
+    protected abstract List<T> getQueryPaginatedResponse(long startingId, long endId, long pageSize ,int pageNumber);
 
     protected abstract void processRecords(List<T> records, AtomicInteger processedCount, AtomicInteger failedCount,
             String jobId, Long batchId);
@@ -118,13 +118,16 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
         try {
             List<CompletableFuture<Void>> futures = new ArrayList<>();
             long startingId = dto.getStartId();
+            long endId = dto.getEndId();
+            Integer pageSize = dto.getPaginationSize();
+            
             int currentPage = 1;
 
             while (true) {
                 log.info("BATCH JOB | Consumer | PREPARING | Batch preparing | jobType={} | jobId={} | batchId={} | startId={} | endId={} | page={} | traceId={} | spanId={}",
                         dto.getJobType(), dto.getJobId(), dto.getBatchId(), startingId, dto.getEndId(), currentPage, traceId(), spanId());
 
-                List<T> records = getQueryPaginatedResponse(startingId, dto.getEndId(), dto.getPaginationSize());
+                List<T> records = getQueryPaginatedResponse(startingId, dto.getEndId(), dto.getPaginationSize() , currentPage);
 
                 if (records == null || records.isEmpty()) {
                     log.info("BATCH JOB | Consumer | NO_RECORDS_FOUND | No records found in range | startId={} | endId={} | traceId={} | spanId={}",
