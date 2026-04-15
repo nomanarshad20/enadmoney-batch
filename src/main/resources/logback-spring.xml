@@ -1,0 +1,17 @@
+<configuration>
+
+    <springProperty scope="context" name="LOG_PATTERN" source="logging.pattern.console"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <!-- Single pattern: use proven timestamp format, app name default, and MDC trace/span -->
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [app=%property{APP_NAME:-app}] [trace=%X{traceId:-N/A} span=%X{spanId:-N/A}] %msg%n MDC:%mdc%n%ex</pattern>
+            <immediateFlush>true</immediateFlush>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+</configuration>

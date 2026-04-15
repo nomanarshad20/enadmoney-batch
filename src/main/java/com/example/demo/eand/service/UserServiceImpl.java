@@ -29,8 +29,8 @@ public class UserServiceImpl implements UserService{
                 .jobType(BatchJobTypeEnum.INACTIVE_USER)
                 .retryCount(3)
                 .batchChunkSize(100000)
-                .paginationSize(100000)
-                .executorPoolSize(1)
+                .paginationSize(10000)
+                .executorPoolSize(10)
                 .build();
         jobProcessingTemplateService.initiateJobBatching(dto);
 

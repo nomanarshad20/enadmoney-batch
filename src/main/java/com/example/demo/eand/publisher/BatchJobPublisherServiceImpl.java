@@ -169,6 +169,7 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
         jobBatchProcessingDto.forEach(batch -> {
             log.info("BATCH JOB : Publisher - Job Batch dto saving in database : {}", getWriteValueAsString(batch));
             savedBatchEntityList.add(toEntity(batch));
+                return;
         });
         batchJobProcessEntityRepo.saveAll(savedBatchEntityList);
         log.info("BATCH JOB : Publisher - Successfully saved all job batches to database");

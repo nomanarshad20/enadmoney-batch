@@ -5,6 +5,7 @@ import com.example.demo.eand.entity.BatchJobProcessEntity;
 import com.example.demo.eand.enums.BatchJobStatusEnum;
 import com.example.demo.eand.repo.BatchJobProcessEntityRepo;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.cloud.sleuth.Span;
 import org.springframework.cloud.sleuth.Tracer;
@@ -56,6 +57,8 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
         Span batchSpan = tracer.nextSpan().name("Batch-Consumer").start();
 
         try (SpanInScope ws = tracer.withSpan(batchSpan)) {
+            MDC.put("traceId", traceId());
+            MDC.put("spanId", spanId());
 
             log.info(
                     "BATCH JOB | Consumer | INITIATION | Processing batch job | jobId={} | batchId={} | traceId={} | spanId={}",
@@ -102,6 +105,8 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
             logEnd(jobDto);
 
         } finally {
+            MDC.remove("traceId");
+            MDC.remove("spanId");
             batchSpan.end();
         }
     }
@@ -145,6 +150,8 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
                     Span pageSpan = tracer.nextSpan().name("batch-page-" + pageNo).start();
 
                     try (SpanInScope ws = tracer.withSpan(pageSpan)) {
+                            MDC.put("traceId", traceId());
+                            MDC.put("spanId", spanId());
                         log.info("BATCH JOB | Consumer | PROCESSING_PAGE | Processing page | jobType={} | jobId={} | batchId={} | pageNo={} | pageSize={} | startId={} | endId={} | traceId={} | spanId={}",
                                 dto.getJobType(), dto.getJobId(), dto.getBatchId(), pageNo, records.size(), finalStartingId, lastId, traceId(), spanId());
 
@@ -161,6 +168,8 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
 
                         throw new RuntimeException(ex);
                     } finally {
+                        MDC.remove("traceId");
+                        MDC.remove("spanId");
                         pageSpan.end();
                     }
 
