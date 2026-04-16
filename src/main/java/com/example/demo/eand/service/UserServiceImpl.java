@@ -29,8 +29,8 @@ public class UserServiceImpl implements UserService{
                 .jobType(BatchJobTypeEnum.INACTIVE_USER)
                 .retryCount(3)
                 .batchChunkSize(100000)
-                .paginationSize(10000)
-                .executorPoolSize(10)
+                .paginationSize(1000)
+                .executorPoolSize(20)
                 .build();
         jobProcessingTemplateService.initiateJobBatching(dto);
 
@@ -63,7 +63,7 @@ public class UserServiceImpl implements UserService{
         try {
             for (UserEntity user : users) {
 
-            /*    if( user.getId() == 5500){
+                if( user.getId() == 5500){
                     log.error("test -  exception behavior jobId={} batchId={}" , jobId , batchId);
                    // throw new RuntimeException("test -  exception behavior");
                 }
@@ -72,7 +72,7 @@ public class UserServiceImpl implements UserService{
                     log.error("test -  exception behavior jobId={} batchId={}" , jobId , batchId);
                     failedCount.incrementAndGet();
                     continue;
-                }*/
+                }
 
 
                 user.setStatus("INACTIVE"); // inactive

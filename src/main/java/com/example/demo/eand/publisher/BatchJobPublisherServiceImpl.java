@@ -118,9 +118,8 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
 
         while (true) {
             JobBatchProcessingDto dto = prepareDefaultDTO(batchConfigDTO, jobId, batchId, startId);
-            // TODO :Call transactional methods via an injected dependency
-            List<Long> userIdsList = fetchUserIds(batchConfigDTO.getJpaSqlCommand(), startId,
-                    batchConfigDTO.getBatchChunkSize());
+
+            List<Long> userIdsList = fetchUserIds(batchConfigDTO.getJpaSqlCommand(), startId, batchConfigDTO.getBatchChunkSize());
             if (null == userIdsList || userIdsList.isEmpty()) {
                 log.info("BATCH JOB : Publisher - No more records found. Stopping processing.");
                 break;
@@ -133,8 +132,7 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
             preparingBatchList.add(dto);
         }
 
-        log.info("BATCH JOB : Publisher - Preprocessing completed. Total batches prepared: {}",
-                preparingBatchList.size());
+        log.info("BATCH JOB : Publisher - Preprocessing completed. Total batches prepared: {}", preparingBatchList.size());
         return preparingBatchList;
     }
 
@@ -146,7 +144,6 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
      * @param pageSize
      * @return List<Long>
      */
-    @Transactional(readOnly = true)
     public List<Long> fetchUserIds(String sql, Long startId, int pageSize) {
         log.info("BATCH JOB : Publisher - Fetching user IDs with startId: {} and pageSize: {}", startId, pageSize);
         @SuppressWarnings("unchecked")
@@ -169,7 +166,6 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
         jobBatchProcessingDto.forEach(batch -> {
             log.info("BATCH JOB : Publisher - Job Batch dto saving in database : {}", getWriteValueAsString(batch));
             savedBatchEntityList.add(toEntity(batch));
-                return;
         });
         batchJobProcessEntityRepo.saveAll(savedBatchEntityList);
         log.info("BATCH JOB : Publisher - Successfully saved all job batches to database");
@@ -196,13 +192,11 @@ public class BatchJobPublisherServiceImpl implements BatchJobPublisherService {
     }
 
     private List<JobBatchProcessingDto> prepareDtoAndMarkOldBatchInactive(BatchProcessingRequestDTO dto) {
-        log.info("BATCH JOB : Publisher - Preparing DTO and marking old batches as inactive for JobId: {}",
-                dto.getJobId());
+        log.info("BATCH JOB : Publisher - Preparing DTO and marking old batches as inactive for JobId: {}", dto.getJobId());
         List<JobBatchProcessingDto> batchList = new ArrayList<>();
 
         // fetch the batch entity from DB
-        List<BatchJobProcessEntity> savedBatchEntityList = findBatches(dto.getJobId(), dto.getBatchId(),
-                dto.getStatus());
+        List<BatchJobProcessEntity> savedBatchEntityList = findBatches(dto.getJobId(), dto.getBatchId(), dto.getStatus());
 
         if (null == savedBatchEntityList || savedBatchEntityList.isEmpty()) {
             log.info("BATCH JOB : Publisher - No batches found for the given criteria: {}", getWriteValueAsString(dto));

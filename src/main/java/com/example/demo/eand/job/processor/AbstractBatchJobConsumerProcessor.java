@@ -79,7 +79,7 @@ public abstract class AbstractBatchJobConsumerProcessor<T> implements BatchJobPr
                 batch.setTotalRecords(totalRecordsCount.get());
                 batch.setProcessedRecords(processedCount.get());
                 batch.setFailedRecords(failedCount.get());
-                batch.setStatus(BatchJobStatusEnum.COMPLETED.name());
+                batch.setStatus((failedCount.get() > 0) ? BatchJobStatusEnum.PARTIAL_COMPLETE.name() : BatchJobStatusEnum.COMPLETED.name());
                 batch.setCompletedAt(LocalDateTime.now());
                 batchJobProcessEntityRepo.save(batch);
 
